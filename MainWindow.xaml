@@ -1,0 +1,134 @@
+﻿<Window x:Class="ScreenTranslator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                Title="Screen Translator" Width="440" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Border Background="{StaticResource BgBrush}" CornerRadius="12"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="14">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnTitleBarMouseDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="16,10,0,0">
+                    <Border Width="10" Height="10" CornerRadius="3"
+                            Background="{StaticResource AccentBrush}" Margin="0,2,8,0"/>
+                    <TextBlock Text="Screen Translator" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="· меню" Foreground="{StaticResource MutedBrush}"
+                               FontSize="11" Margin="8,2,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,6,8,0">
+                    <Button Content="–" Style="{StaticResource TitleBarButton}" Click="OnMinimizeClick"/>
+                    <Button Content="✕" Style="{StaticResource TitleBarCloseButton}" Click="OnMenuHideClick"/>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="20,6,20,20">
+                <TextBlock Text="ГОРЯЧИЕ КЛАВИШИ" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" Margin="0,8,0,10"/>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Перевод области" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <Button x:Name="RegionHotkeyButton" Grid.Column="1"
+                            Style="{StaticResource DarkButton}" Click="OnRegionHotkeyClick"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Перевод всего экрана" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <Button x:Name="ScreenHotkeyButton" Grid.Column="1"
+                            Style="{StaticResource DarkButton}" Click="OnScreenHotkeyClick"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Открыть меню" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <Button x:Name="MenuHotkeyButton" Grid.Column="1"
+                            Style="{StaticResource DarkButton}" Click="OnMenuHotkeyClick"/>
+                </Grid>
+
+                <TextBlock Text="РАСПОЗНАВАНИЕ" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" Margin="0,6,0,10"/>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Движок OCR" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="OcrEngineBox" Grid.Column="1" Width="190"
+                              Background="{StaticResource SurfaceBrush}"
+                              Foreground="{StaticResource SurfaceBrush}"
+                              BorderBrush="{StaticResource BorderBrush}"
+                              SelectionChanged="OnOcrEngineChanged"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Язык OCR" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="OcrLanguageBox" Grid.Column="1" Width="190"
+                              Background="{StaticResource SurfaceBrush}"
+                              Foreground="{StaticResource SurfaceBrush}"
+                              BorderBrush="{StaticResource BorderBrush}"
+                              SelectionChanged="OnOcrLanguageChanged"/>
+                </Grid>
+
+                <TextBlock Text="РАЗМЕР ТЕКСТА В ОВЕРЛЕЕ" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" Margin="0,10,0,6"/>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Slider x:Name="FontSizeSlider" Minimum="12" Maximum="28" SmallChange="1"
+                            LargeChange="2" VerticalAlignment="Center"
+                            ValueChanged="OnFontSizeChanged"/>
+                    <TextBlock x:Name="FontSizeLabel" Grid.Column="1" Width="40"
+                               TextAlignment="Right" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </Grid>
+
+                <TextBlock Text="ПРОЧЕЕ" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" Margin="0,6,0,10"/>
+
+                <Button Content="Словарь" Style="{StaticResource DarkButton}"
+                        HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="OnDictionaryClick"/>
+                <Button Content="Игра со словами" Style="{StaticResource DarkButton}"
+                        HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="OnQuizClick"/>
+                <Button Content="Выход" Style="{StaticResource DarkButton}"
+                        Foreground="{StaticResource DangerBrush}"
+                        HorizontalAlignment="Stretch" Click="OnExitClick"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
