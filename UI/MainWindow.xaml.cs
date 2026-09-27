@@ -71,6 +71,8 @@ public partial class MainWindow : Window
 
         FontSizeSlider.Value = _settings.OverlayFontSize;
         FontSizeLabel.Text = _settings.OverlayFontSize.ToString("0");
+        TransparencySlider.Value = Math.Clamp(_settings.OverlayTransparencyPercent, 0, 70);
+        TransparencyLabel.Text = $"{TransparencySlider.Value:0}%";
 
         // движок OCR
         OcrEngineBox.Items.Add(new ComboBoxItem { Content = "Windows OCR", Tag = "windows" });
@@ -87,7 +89,11 @@ public partial class MainWindow : Window
         if (OcrEngineBox.SelectedItem is null)
             OcrEngineBox.SelectedIndex = 0;
 
+        UpdateOcrStatus();
+        UpdateDeepLStatus();
+
         _overlay = new TranslationOverlay();
+        _overlay.SetTransparency(_settings.OverlayTransparencyPercent);
         _overlay.SetHint(BuildHintText());
         _overlay.AnimateIn();
     }
@@ -95,7 +101,11 @@ public partial class MainWindow : Window
     private string BuildHintText() =>
         _settings.RegionHotkey.Format() + " — перевод области\n" +
         _settings.ScreenHotkey.Format() + " — перевод всего экрана\n" +
-        _settings.MenuHotkey.Format() + " — меню";
+        _settings.MenuHotkey.Format() + " — меню" +
+        (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DEEPL_API_KEY")) &&
+         string.IsNullOrWhiteSpace(_settings.DeepLApiKey)
+            ? "\nНастройте ключ DeepL в меню, чтобы включить перевод."
+            : "");
 
     // направление перевода следует за языком OCR
     private (string Source, string Target) TranslationPair(string recognizedText)
@@ -117,6 +127,7 @@ public partial class MainWindow : Window
         {
             _settings.OcrLanguage = tag;
             Settings.Save(_settings);
+            UpdateOcrStatus();
         }
     }
 
@@ -131,6 +142,17 @@ public partial class MainWindow : Window
         _overlay?.SetFontSize(value);
     }
 
+    private void OnTransparencyChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (TransparencyLabel is null) return;
+        var value = Math.Round(TransparencySlider.Value);
+        TransparencyLabel.Text = $"{value:0}%";
+        if (Math.Abs(value - _settings.OverlayTransparencyPercent) < 0.1) return;
+        _settings.OverlayTransparencyPercent = value;
+        Settings.Save(_settings);
+        _overlay?.SetTransparency(value);
+    }
+
     private void OnOcrEngineChanged(object sender, SelectionChangedEventArgs e)
     {
         if (OcrEngineBox.SelectedItem is ComboBoxItem item &&
@@ -138,7 +160,51 @@ public partial class MainWindow : Window
         {
             _settings.OcrEngine = tag;
             Settings.Save(_settings);
+            UpdateOcrStatus();
         }
+    }
+
+    private void UpdateOcrStatus()
+    {
+        if (OcrStatusText is null) return;
+        TesseractSetupButton.Visibility = _settings.OcrEngine == "tesseract"
+            ? Visibility.Visible : Visibility.Collapsed;
+        OcrStatusText.Text = WindowsOcr.GetLanguageStatus(_settings);
+        OcrStatusText.Foreground = OcrStatusText.Text.Contains("не найден", StringComparison.OrdinalIgnoreCase) ||
+                                   OcrStatusText.Text.Contains("не найдены", StringComparison.OrdinalIgnoreCase)
+            ? Brushes.Orange : (Brush)FindResource("MutedBrush");
+
+        if (OcrLanguageBox.SelectedItem is ComboBoxItem languageItem && languageItem.Tag?.ToString() == "auto")
+            languageItem.Content = _settings.OcrEngine == "windows" ? "Авто (системный)" : "Авто";
+        foreach (ComboBoxItem item in OcrLanguageBox.Items)
+        {
+            if (item.Tag?.ToString() == "auto" && !ReferenceEquals(item, OcrLanguageBox.SelectedItem))
+                item.Content = _settings.OcrEngine == "windows" ? "Авто (системный)" : "Авто";
+        }
+    }
+
+    private void OnDeepLKeyClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new DeepLKeyWindow(_settings) { Owner = this };
+        dialog.ShowDialog();
+        UpdateDeepLStatus();
+    }
+
+    private void UpdateDeepLStatus()
+    {
+        if (DeepLStatusText is null) return;
+        var environmentKey = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DEEPL_API_KEY"));
+        var savedKey = !string.IsNullOrWhiteSpace(_settings.DeepLApiKey);
+        DeepLStatusText.Text = environmentKey ? "Ключ задан через DEEPL_API_KEY." :
+            savedKey ? "Ключ сохранён в настройках." : "Ключ не задан.";
+        DeepLStatusText.Foreground = environmentKey || savedKey ? (Brush)FindResource("MutedBrush") : Brushes.Orange;
+    }
+
+    private void OnTesseractSetupClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new TesseractSetupWindow(_settings) { Owner = this };
+        dialog.ShowDialog();
+        UpdateOcrStatus();
     }
 
     // ---------- заголовок ----------
@@ -209,13 +275,7 @@ public partial class MainWindow : Window
                 (int)region.X, (int)region.Y, (int)region.Width, (int)region.Height);
             var original = await WindowsOcr.RecognizeAsync(shot);
 
-            if (string.IsNullOrWhiteSpace(original))
-                ShowResult("(текст не найден)");
-            else
-            {
-                var (s, t) = TranslationPair(original);
-                ShowResult(await _translator.TranslateAsync(original, s, t), original);
-            }
+            await TranslateRecognizedAsync(original);
         }
         catch (Exception ex)
         {
@@ -241,13 +301,7 @@ public partial class MainWindow : Window
             using var shot = ScreenCapturer.CapturePrimaryScreen();
             var original = await WindowsOcr.RecognizeAsync(shot);
 
-            if (string.IsNullOrWhiteSpace(original))
-                ShowResult("(текст не найден)");
-            else
-            {
-                var (s, t) = TranslationPair(original);
-                ShowResult(await _translator.TranslateAsync(original, s, t), original);
-            }
+            await TranslateRecognizedAsync(original);
         }
         catch (Exception ex)
         {
@@ -258,6 +312,18 @@ public partial class MainWindow : Window
             if (menuWasVisible) OnMenuHotkey();
             _isBusy = false;
         }
+    }
+
+    private async Task TranslateRecognizedAsync(string recognized)
+    {
+        if (string.IsNullOrWhiteSpace(recognized))
+        {
+            ShowResult("(текст не найден)");
+            return;
+        }
+
+        var (source, target) = TranslationPair(recognized);
+        ShowResult(await _translator.TranslateAsync(recognized, source, target), recognized);
     }
 
     private void ShowResult(string text, string? original = null)

@@ -7,22 +7,22 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<!-- если подключал иконку, верни эти две строки:
-    <ApplicationIcon>app.ico</ApplicationIcon>
+		<ApplicationIcon>Assets\app.ico</ApplicationIcon>
     -->
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="System.Drawing.Common" Version="8.0.7" />
 		<PackageReference Include="PaddleOCRSharp" Version="6.2.0" />
-		<!-- если подключал иконку, верни: <Resource Include="app.ico" /> -->
+		<!-- если подключал иконку, верни: <Resource Include="Assets\app.ico" /> -->
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="words.txt" LogicalName="ScreenTranslator.words.txt" />
-		<None Update="words.txt" CopyToOutputDirectory="PreserveNewest"
-		      CopyToPublishDirectory="PreserveNewest" />
-		<None Update="tessdata\eng.traineddata" CopyToOutputDirectory="PreserveNewest"
-		      CopyToPublishDirectory="PreserveNewest" />
+		<EmbeddedResource Include="Assets\words.txt" LogicalName="ScreenTranslator.words.txt" />
+		<None Update="Assets\words.txt" CopyToOutputDirectory="PreserveNewest"
+		      CopyToPublishDirectory="PreserveNewest" Link="words.txt" />
+		<None Update="Assets\tessdata\eng.traineddata" CopyToOutputDirectory="PreserveNewest"
+		      CopyToPublishDirectory="PreserveNewest" Link="tessdata\eng.traineddata" />
 	</ItemGroup>
 
 	<!-- нативки Paddle: автоматически раскладываются рядом с exe -->

@@ -21,8 +21,7 @@ public static class WindowsOcr
 
         _engine = langTag == "auto"
             ? OcrEngine.TryCreateFromUserProfileLanguages()
-            : OcrEngine.TryCreateFromLanguage(new Language(langTag))
-              ?? OcrEngine.TryCreateFromUserProfileLanguages();
+            : OcrEngine.TryCreateFromLanguage(new Language(langTag));
         _engineLang = langTag;
         return _engine;
     }
@@ -43,7 +42,9 @@ public static class WindowsOcr
         if (settings.OcrEngine == "tesseract")
         {
             var text = await TesseractOcr.RecognizeAsync(bitmap);
-            return await TextCorrector.CorrectAsync(text);
+            return ShouldCorrectEnglish(text, settings.OcrLanguage)
+                ? await TextCorrector.CorrectAsync(text)
+                : text;
         }
 
         var engine = GetEngine(settings.OcrLanguage)
@@ -62,6 +63,24 @@ public static class WindowsOcr
         return ShouldCorrectEnglish(best, settings.OcrLanguage)
             ? await TextCorrector.CorrectAsync(best)
             : best;
+    }
+
+    public static string GetLanguageStatus(Settings settings)
+    {
+        if (settings.OcrEngine == "tesseract")
+            return TesseractOcr.GetLanguageStatus(settings);
+        if (settings.OcrEngine == "paddle")
+            return "PaddleOCR не использует языковые модели Windows или Tesseract.";
+
+        if (settings.OcrLanguage == "auto")
+            return OcrEngine.TryCreateFromUserProfileLanguages() is not null
+                ? "Используются языки распознавания, установленные в Windows."
+                : "В Windows не найден языковой компонент OCR. Установите его в параметрах языка.";
+
+        var tag = settings.OcrLanguage;
+        return OcrEngine.TryCreateFromLanguage(new Language(tag)) is not null
+            ? $"Компонент { (tag.StartsWith("ru", StringComparison.OrdinalIgnoreCase) ? "русского" : "английского") } языка найден в Windows."
+            : $"В Windows не найден компонент { (tag.StartsWith("ru", StringComparison.OrdinalIgnoreCase) ? "русского" : "английского") } OCR. Установите его в параметрах языка.";
     }
 
     private static bool ShouldCorrectEnglish(string text, string language)

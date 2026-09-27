@@ -102,6 +102,19 @@
                               SelectionChanged="OnOcrLanguageChanged"/>
                 </Grid>
 
+                <TextBlock x:Name="OcrStatusText" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" TextWrapping="Wrap" Margin="0,-4,0,8"/>
+                <Button x:Name="TesseractSetupButton" Content="Настроить Tesseract…"
+                        Style="{StaticResource DarkButton}" HorizontalAlignment="Stretch"
+                        Margin="0,0,0,8" Visibility="Collapsed" Click="OnTesseractSetupClick"/>
+
+                <TextBlock Text="ПЕРЕВОД" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" Margin="0,4,0,6"/>
+                <TextBlock x:Name="DeepLStatusText" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                <Button Content="Настроить ключ DeepL…" Style="{StaticResource DarkButton}"
+                        HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="OnDeepLKeyClick"/>
+
                 <TextBlock Text="РАЗМЕР ТЕКСТА В ОВЕРЛЕЕ" Foreground="{StaticResource MutedBrush}"
                            FontSize="11" Margin="0,10,0,6"/>
 
@@ -114,6 +127,21 @@
                             LargeChange="2" VerticalAlignment="Center"
                             ValueChanged="OnFontSizeChanged"/>
                     <TextBlock x:Name="FontSizeLabel" Grid.Column="1" Width="40"
+                               TextAlignment="Right" Foreground="{StaticResource TextBrush}"
+                               FontSize="13" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </Grid>
+
+                <TextBlock Text="ПРОЗРАЧНОСТЬ ФОНА ОВЕРЛЕЯ" Foreground="{StaticResource MutedBrush}"
+                           FontSize="11" Margin="0,10,0,6"/>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Slider x:Name="TransparencySlider" Minimum="0" Maximum="70" SmallChange="1"
+                            LargeChange="5" VerticalAlignment="Center"
+                            ValueChanged="OnTransparencyChanged"/>
+                    <TextBlock x:Name="TransparencyLabel" Grid.Column="1" Width="40"
                                TextAlignment="Right" Foreground="{StaticResource TextBrush}"
                                FontSize="13" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </Grid>

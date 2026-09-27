@@ -20,8 +20,8 @@ public class DeepLTranslator
                 key = Settings.Load().DeepLApiKey;
             if (string.IsNullOrWhiteSpace(key))
                 throw new InvalidOperationException(
-                    $"Не найден ключ DeepL. Проверь поле DeepLApiKey в файле {Settings.SettingsPath} " +
-                    "или переменную среды DEEPL_API_KEY.");
+                    "Не найден ключ DeepL. Открой меню приложения и нажми «Настроить ключ DeepL…» " +
+                    "или задай переменную среды DEEPL_API_KEY.");
             return key.Trim();
         }
     }

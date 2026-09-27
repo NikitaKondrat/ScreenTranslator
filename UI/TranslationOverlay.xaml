@@ -7,7 +7,7 @@
         MouseLeftButtonDown="OnMouseLeftButtonDown"
         MouseMove="OnMouseMove"
         MouseLeftButtonUp="OnMouseLeftButtonUp">
-	<Border Background="#F01B1B1B" CornerRadius="10" Margin="10"
+	<Border x:Name="OverlayBackground" Background="#F01B1B1B" CornerRadius="10" Margin="10"
             BorderBrush="#3A3A3A" BorderThickness="1">
 		<Border.Effect>
 			<DropShadowEffect Color="Black" BlurRadius="16" ShadowDepth="0" Opacity="0.5"/>

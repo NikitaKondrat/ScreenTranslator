@@ -58,6 +58,13 @@ public partial class TranslationOverlay : Window
         WordBadge.Instance.Hide();
     }
 
+    public void SetTransparency(double transparencyPercent)
+    {
+        var transparency = Math.Clamp(transparencyPercent, 0, 70) / 100.0;
+        byte alpha = (byte)Math.Round(240 * (1 - transparency));
+        OverlayBackground.Background = new SolidColorBrush(Color.FromArgb(alpha, 0x1B, 0x1B, 0x1B));
+    }
+
     public void AddEntry(string translated, string? original = null)
     {
         _history.Add((original ?? "", translated));

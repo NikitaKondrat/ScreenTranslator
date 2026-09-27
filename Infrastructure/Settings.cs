@@ -39,6 +39,12 @@ public class Settings
 
     public double OverlayFontSize { get; set; } = 16;
 
+    // 0 = непрозрачный фон, 70 = максимальная прозрачность.
+    public double OverlayTransparencyPercent { get; set; } = 0;
+
+    public string TesseractExePath { get; set; } = "";
+    public string TesseractDataPath { get; set; } = "";
+
     // "windows" или "paddle"
     public string OcrEngine { get; set; } = "windows";
 
