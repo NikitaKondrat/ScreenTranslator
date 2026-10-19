@@ -14,7 +14,6 @@ public class DictEntry
     public string ExampleEn { get; set; } = "";
     public string ExampleRu { get; set; } = "";
     public string AddedAt { get; set; } = "";
-    // легаси
     public string Translation { get; set; } = "";
 }
 
@@ -53,7 +52,6 @@ public static class DictionaryStore
 
     public static void Save(List<DictEntry> list)
     {
-        // Do not overwrite an unreadable dictionary with an empty list.
         if (File.Exists(StorePath))
             _ = JsonSerializer.Deserialize<List<DictEntry>>(File.ReadAllText(StorePath))
                 ?? throw new InvalidDataException("Файл словаря пуст или повреждён.");
@@ -63,7 +61,6 @@ public static class DictionaryStore
             JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true }));
     }
 
-    // сохранение богатой карточки; если слово есть — дополняем
     public static void AddRich(DictEntry entry)
     {
         var list = Load();

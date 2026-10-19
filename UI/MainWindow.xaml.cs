@@ -12,7 +12,7 @@ namespace ScreenTranslator;
 
 public partial class MainWindow : Window
 {
-    private readonly DeepLTranslator _translator = new();
+    private readonly ITranslator _translator = TranslationService.Instance;
     private readonly List<GlobalHotkey> _hotkeys = new();
     private Settings _settings = Settings.Load();
 
@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        MaxHeight = SystemParameters.WorkArea.Height;
         Closing += (_, e) =>
         {
             if (!_allowClose) { e.Cancel = true; Hide(); }
@@ -54,7 +55,6 @@ public partial class MainWindow : Window
 
         RefreshHotkeyButtons();
 
-        // язык OCR
         OcrLanguageBox.Items.Add(new ComboBoxItem { Content = "Английский", Tag = "en-US" });
         OcrLanguageBox.Items.Add(new ComboBoxItem { Content = "Русский", Tag = "ru-RU" });
         OcrLanguageBox.Items.Add(new ComboBoxItem { Content = "Авто (системный)", Tag = "auto" });
@@ -74,7 +74,6 @@ public partial class MainWindow : Window
         TransparencySlider.Value = Math.Clamp(_settings.OverlayTransparencyPercent, 0, 70);
         TransparencyLabel.Text = $"{TransparencySlider.Value:0}%";
 
-        // движок OCR
         OcrEngineBox.Items.Add(new ComboBoxItem { Content = "Windows OCR", Tag = "windows" });
         OcrEngineBox.Items.Add(new ComboBoxItem { Content = "PaddleOCR", Tag = "paddle" });
         OcrEngineBox.Items.Add(new ComboBoxItem { Content = "Tesseract OCR", Tag = "tesseract" });
@@ -90,7 +89,8 @@ public partial class MainWindow : Window
             OcrEngineBox.SelectedIndex = 0;
 
         UpdateOcrStatus();
-        UpdateDeepLStatus();
+        TranslationProviderBox.SelectedIndex = _settings.TranslationProvider == "local" ? 1 : 0;
+        UpdateTranslationStatus();
 
         _overlay = new TranslationOverlay();
         _overlay.SetTransparency(_settings.OverlayTransparencyPercent);
@@ -102,12 +102,13 @@ public partial class MainWindow : Window
         _settings.RegionHotkey.Format() + " — перевод области\n" +
         _settings.ScreenHotkey.Format() + " — перевод всего экрана\n" +
         _settings.MenuHotkey.Format() + " — меню" +
-        (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DEEPL_API_KEY")) &&
+        (_settings.TranslationProvider == "local"
+            ? (LocalTranslationFiles.IsInstalled(_settings) ? "" : "\nСкачайте локальную модель в меню приложения.")
+            : string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DEEPL_API_KEY")) &&
          string.IsNullOrWhiteSpace(_settings.DeepLApiKey)
             ? "\nНастройте ключ DeepL в меню, чтобы включить перевод."
             : "");
 
-    // направление перевода следует за языком OCR
     private (string Source, string Target) TranslationPair(string recognizedText)
     {
         var russian = _settings.OcrLanguage == "auto"
@@ -118,7 +119,6 @@ public partial class MainWindow : Window
         return (src, src == "EN" ? "RU" : "EN");
     }
 
-    // ---------- настройки распознавания ----------
 
     private void OnOcrLanguageChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -187,17 +187,51 @@ public partial class MainWindow : Window
     {
         var dialog = new DeepLKeyWindow(_settings) { Owner = this };
         dialog.ShowDialog();
-        UpdateDeepLStatus();
+        UpdateTranslationStatus();
     }
 
-    private void UpdateDeepLStatus()
+    private async void OnTranslationProviderChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (DeepLStatusText is null) return;
+        if (TranslationProviderBox.SelectedItem is not ComboBoxItem item || item.Tag is not string tag ||
+            tag == _settings.TranslationProvider) return;
+        var previous = _settings.TranslationProvider;
+        try
+        {
+            _settings.TranslationProvider = tag;
+            Settings.Save(_settings);
+            WordInfoService.ClearCache();
+            UpdateTranslationStatus();
+            if (tag == "deepl") await TranslationService.Instance.Local.StopAsync();
+        }
+        catch (Exception ex)
+        {
+            _settings.TranslationProvider = previous;
+            TranslationProviderBox.SelectedIndex = previous == "local" ? 1 : 0;
+            UpdateTranslationStatus();
+            MessageBox.Show(this, ex.Message, "Переводчик");
+        }
+    }
+
+    private void OnLocalTranslationSetupClick(object sender, RoutedEventArgs e)
+    {
+        new LocalTranslationSetupWindow(_settings) { Owner = this }.ShowDialog();
+        UpdateTranslationStatus();
+    }
+
+    private void UpdateTranslationStatus()
+    {
+        if (TranslationStatusText is null) return;
+        var local = _settings.TranslationProvider == "local";
+        DeepLKeyButton.Visibility = local ? Visibility.Collapsed : Visibility.Visible;
+        LocalTranslationButton.Visibility = local ? Visibility.Visible : Visibility.Collapsed;
         var environmentKey = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DEEPL_API_KEY"));
         var savedKey = !string.IsNullOrWhiteSpace(_settings.DeepLApiKey);
-        DeepLStatusText.Text = environmentKey ? "Ключ задан через DEEPL_API_KEY." :
-            savedKey ? "Ключ сохранён в настройках." : "Ключ не задан.";
-        DeepLStatusText.Foreground = environmentKey || savedKey ? (Brush)FindResource("MutedBrush") : Brushes.Orange;
+        var ready = local ? LocalTranslationFiles.IsInstalled(_settings) : environmentKey || savedKey;
+        TranslationStatusText.Text = local
+            ? (ready ? "Hy-MT2 Q4 готов. Перевод выполняется на этом компьютере." : "Скачайте модель и движок в настройке локального перевода.")
+            : environmentKey ? "Ключ задан через DEEPL_API_KEY." : savedKey ? "Ключ сохранён в настройках." : "Ключ не задан.";
+        TranslationStatusText.Foreground = ready ? (Brush)FindResource("MutedBrush") : Brushes.Orange;
+        _overlay?.SetHint(BuildHintText());
     }
 
     private void OnTesseractSetupClick(object sender, RoutedEventArgs e)
@@ -207,13 +241,11 @@ public partial class MainWindow : Window
         UpdateOcrStatus();
     }
 
-    // ---------- заголовок ----------
 
     private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e) => DragMove();
     private void OnMinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void OnMenuHideClick(object sender, RoutedEventArgs e) => Hide();
 
-    // ---------- горячие клавиши ----------
 
     private bool RebuildHotkeys()
     {
@@ -254,7 +286,6 @@ public partial class MainWindow : Window
         Activate();
     }
 
-    // ---------- перевод ----------
 
     private async Task SelectAndTranslateAsync()
     {
@@ -323,7 +354,11 @@ public partial class MainWindow : Window
         }
 
         var (source, target) = TranslationPair(recognized);
-        ShowResult(await _translator.TranslateAsync(recognized, source, target), recognized);
+        _overlay!.SetHint(BuildHintText() + (_settings.TranslationProvider == "local"
+            ? "\nЛокальный перевод… При первом запросе загружается модель." : "\nПеревожу…"));
+        if (!_overlay.IsVisible) _overlay.AnimateIn();
+        try { ShowResult(await _translator.TranslateAsync(recognized, source, target), recognized); }
+        finally { _overlay.SetHint(BuildHintText()); }
     }
 
     private void ShowResult(string text, string? original = null)
@@ -332,7 +367,6 @@ public partial class MainWindow : Window
         if (!_overlay.IsVisible) _overlay.AnimateIn();
     }
 
-    // ---------- словарь и игра ----------
 
     private void OnDictionaryClick(object sender, RoutedEventArgs e)
     {
@@ -356,7 +390,6 @@ public partial class MainWindow : Window
         new QuizWindow().ShowDialog();
     }
 
-    // ---------- смена сочетаний ----------
 
     private void OnRegionHotkeyClick(object sender, RoutedEventArgs e) =>
         StartCapture(RegionHotkeyButton, _settings.RegionHotkey);

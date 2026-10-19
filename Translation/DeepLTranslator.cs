@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ScreenTranslator;
 
-public class DeepLTranslator
+public class DeepLTranslator : ITranslator
 {
     private static readonly HttpClient Client = new();
 
@@ -34,7 +34,6 @@ public class DeepLTranslator
         CancellationToken cancellationToken = default) =>
         (await TranslateBatchAsync(new[] { text }, sourceLang, targetLang, cancellationToken))[0];
 
-    // несколько текстов одним запросом (DeepL поддерживает повтор text=)
     public async Task<List<string>> TranslateBatchAsync(
         IEnumerable<string> texts, string sourceLang, string targetLang,
         CancellationToken cancellationToken = default)

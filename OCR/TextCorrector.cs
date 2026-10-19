@@ -23,8 +23,6 @@ public static class TextCorrector
 
     private static readonly Lazy<HashSet<string>> Words = new(LoadWords);
 
-    // A split needs at least one common boundary word; otherwise names and
-    // unusual words from a screenshot are too easy to split incorrectly.
     private static readonly HashSet<string> BoundaryWords = new(StringComparer.Ordinal)
     {
         "a", "an", "the", "to", "of", "and", "or", "in", "on", "at",
@@ -39,11 +37,8 @@ public static class TextCorrector
     {
         if (string.IsNullOrWhiteSpace(text)) return text;
 
-        // Zero-width spaces are invisible in the overlay but separate words.
         text = text.Replace('\u200B', ' ').Replace('\u2060', ' ');
 
-        // Keep visually similar Cyrillic letters in the token so they can be
-        // normalized before checking the English dictionary (e.g. "tоthe").
         var parts = Regex.Split(text, @"([A-Za-z0-9\u0400-\u04FF]+)");
         var sb = new StringBuilder(text.Length);
 
@@ -82,7 +77,6 @@ public static class TextCorrector
         if (words.Contains(token.ToLowerInvariant()))
             return token;
 
-        // PaddleOCR may merge short words too: "tothe", "coastof".
         if (token.Length >= 4 && token.Length <= 32 &&
             Regex.IsMatch(token, @"^[A-Za-z]+$"))
         {
@@ -109,8 +103,6 @@ public static class TextCorrector
         return token;
     }
 
-    // Only choose a split when it has a clear lead over other valid splits.
-    // The whole-word dictionary check above always takes precedence.
     private static string? TrySplitMerged(string token, HashSet<string> words)
     {
         var s = token.ToLowerInvariant();
@@ -122,7 +114,6 @@ public static class TextCorrector
             if (parts.Any(p => !words.Contains(p)) ||
                 !parts.Any(BoundaryWords.Contains)) return;
 
-            // Prefer common function words and longer content words.
             var score = parts.Sum(p => BoundaryWords.Contains(p) ? 3 :
                 p.Length >= 4 ? 2 : -3) - 3 * (parts.Length - 2);
             candidates.Add((parts, score));
@@ -167,8 +158,6 @@ public static class TextCorrector
 
     private static HashSet<string> LoadWords()
     {
-        // Embed the dictionary so it cannot silently disappear from the
-        // build output. Keep the external file as a fallback for old builds.
         using var stream = typeof(TextCorrector).Assembly
             .GetManifestResourceStream("ScreenTranslator.words.txt")
             ?? (File.Exists(Path.Combine(AppContext.BaseDirectory, "words.txt"))

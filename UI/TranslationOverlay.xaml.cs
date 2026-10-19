@@ -172,7 +172,6 @@ public partial class TranslationOverlay : Window
 
     private void OnCloseClick(object sender, RoutedEventArgs e) => Hide();
 
-    // ---------- перетаскивание ----------
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -212,7 +211,6 @@ public partial class TranslationOverlay : Window
         return false;
     }
 
-    // ---------- растягивание ----------
 
     private void OnGripMouseDown(object sender, MouseButtonEventArgs e)
     {

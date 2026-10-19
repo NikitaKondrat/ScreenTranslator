@@ -18,7 +18,6 @@ public sealed class GlobalHotkey : IDisposable
     [DllImport("user32.dll")]
     private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-    // ---------- низкоуровневый хук (fallback) ----------
     private const int WH_KEYBOARD_LL = 13;
     private const int WM_KEYDOWN = 0x0100;
     private const int WM_KEYUP = 0x0101;
@@ -65,7 +64,6 @@ public sealed class GlobalHotkey : IDisposable
         _shift = shift;
         _vk = (uint)KeyInterop.VirtualKeyFromKey(key);
 
-        // Путь 1: системный RegisterHotKey
         var helper = new WindowInteropHelper(window);
         _source = HwndSource.FromHwnd(helper.Handle);
 
@@ -86,7 +84,6 @@ public sealed class GlobalHotkey : IDisposable
         }
         else
         {
-            // Путь 2: хук клавиатуры — ему не мешает «занятость» сочетания
             _proc = HookCallback;
             _hook = SetWindowsHookEx(WH_KEYBOARD_LL, _proc, GetModuleHandle(null), 0);
             if (_hook == IntPtr.Zero)

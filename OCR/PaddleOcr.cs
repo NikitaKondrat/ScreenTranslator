@@ -11,7 +11,6 @@ public static class PaddleOcr
     private static PaddleOCREngine? _engine;
     private static readonly object Lock = new();
 
-    // движок дорогой, создаём один раз лениво
     private static PaddleOCREngine GetEngine()
     {
         if (_engine is not null) return _engine;
@@ -31,9 +30,6 @@ public static class PaddleOcr
             try
             {
                 var result = GetEngine().DetectText(prepared);
-                // OCRResult.Text concatenates blocks without a separator.
-                // Keep blocks even when Paddle did not return coordinates.
-                // Using result.Text in that case loses the spaces between blocks.
                 var blocks = result?.TextBlocks?
                     .Where(b => !string.IsNullOrWhiteSpace(b.Text))
                     .Select(b => new
@@ -47,8 +43,6 @@ public static class PaddleOcr
                     })
                     .ToList();
 
-                // Sort only if every block has coordinates. Otherwise preserve
-                // Paddle's own reading order instead of pushing unknown blocks away.
                 if (blocks is { Count: > 0 } && blocks.All(b => b.HasPosition))
                     blocks = blocks.OrderBy(b => b.Top).ThenBy(b => b.Left).ToList();
 
@@ -66,8 +60,6 @@ public static class PaddleOcr
                     recognized.Select(c => $"U+{(int)c:X4}")));
 #endif
 
-                // Correct every OCR result here. TextCorrector leaves ordinary
-                // Cyrillic text unchanged and repairs merged English tokens.
                 var corrected = TextCorrector.Correct(recognized);
 #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[OCR] corrected=[{corrected}]");

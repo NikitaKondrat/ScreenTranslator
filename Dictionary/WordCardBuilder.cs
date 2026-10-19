@@ -86,7 +86,6 @@ public static class WordCardBuilder
         return Build(d, false);
     }
 
-    // текст с жёлтой подсветкой первого совпадения (с учётом окончаний)
     public static TextBlock Highlighted(string text, IEnumerable<string> keys,
         bool italic, double fontSize, string fg)
     {

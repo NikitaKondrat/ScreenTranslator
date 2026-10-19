@@ -19,9 +19,6 @@ public partial class RegionSelector : Window
     public RegionSelector()
     {
         InitializeComponent();
-        // Ограничиваем выбор основным монитором. Главное окно ScreenTranslator
-        // открывается по центру экрана, поэтому пользователю нужно выбирать
-        // область именно на этом экране, а не на всём виртуальном рабочем столе.
         Left = 0;
         Top = 0;
         Width = SystemParameters.PrimaryScreenWidth;
@@ -29,7 +26,6 @@ public partial class RegionSelector : Window
         Loaded += (_, _) => StealFocus();
     }
 
-    // ---------- принудительный захват фокуса у игры ----------
 
     private void StealFocus()
     {
@@ -74,7 +70,6 @@ public partial class RegionSelector : Window
         public static extern bool BringWindowToTop(IntPtr hWnd);
     }
 
-    // ---------- выделение области ----------
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {

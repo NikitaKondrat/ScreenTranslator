@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace ScreenTranslator;
 
-/// <summary>Runs the locally installed Tesseract command-line engine against a captured image.</summary>
 public static class TesseractOcr
 {
     public static async Task<string> RecognizeAsync(Bitmap bitmap)
@@ -103,7 +102,7 @@ public static class TesseractOcr
         {
             executable = ResolveExecutable(settings);
             if (File.Exists(executable)) return true;
-            // The literal "tesseract" may still resolve through PATH at process launch.
+
             var path = Environment.GetEnvironmentVariable("PATH") ?? "";
             foreach (var folder in path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
                 if (File.Exists(Path.Combine(folder.Trim(), "tesseract.exe"))) return true;

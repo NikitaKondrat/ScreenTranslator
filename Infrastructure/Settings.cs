@@ -31,6 +31,9 @@ public class Settings
     };
 
     public string DeepLApiKey { get; set; } = "";
+    public string TranslationProvider { get; set; } = "deepl";
+    public string LocalServerPath { get; set; } = "";
+    public string LocalModelPath { get; set; } = "";
     public HotkeySettings RegionHotkey { get; set; } = new() { Key = "Z" };
     public HotkeySettings ScreenHotkey { get; set; } = new() { Key = "X" };
     public HotkeySettings MenuHotkey { get; set; } = new() { Key = "M" };
@@ -39,13 +42,12 @@ public class Settings
 
     public double OverlayFontSize { get; set; } = 16;
 
-    // 0 = непрозрачный фон, 70 = максимальная прозрачность.
+
     public double OverlayTransparencyPercent { get; set; } = 0;
 
     public string TesseractExePath { get; set; } = "";
     public string TesseractDataPath { get; set; } = "";
 
-    // "windows" или "paddle"
     public string OcrEngine { get; set; } = "windows";
 
     internal static string SettingsPath => UserData.PathFor("settings.json");
@@ -67,7 +69,6 @@ public class Settings
 
     public static void Save(Settings s)
     {
-        // Protect an existing settings file if it cannot be parsed.
         if (File.Exists(SettingsPath))
             _ = JsonSerializer.Deserialize<Settings>(File.ReadAllText(SettingsPath), ReadOptions)
                 ?? throw new InvalidDataException("Файл настроек пуст или повреждён.");

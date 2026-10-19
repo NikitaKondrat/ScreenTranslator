@@ -30,7 +30,6 @@ public static class WindowsOcr
     {
         var settings = Settings.Load();
 
-        // альтернативный движок
         if (settings.OcrEngine == "paddle")
         {
             var paddleText = await PaddleOcr.RecognizeAsync(bitmap);
@@ -117,8 +116,6 @@ public static class WindowsOcr
             File.Delete(tempPath);
         }
     }
-    // Собираем текст сами: пробел между словами, перевод строки между строками.
-    // Так слова и абзацы больше не слипаются.
     
     private static string BuildText(OcrResult result)
     {

@@ -8,8 +8,6 @@ namespace ScreenTranslator;
 
 public static class ImagePreprocessor
 {
-    // растяжка по горизонтали: увеличивает межсловные зазоры в пикселях,
-    // движку проще разделить слова
     private const double HStretch = 1.6;
 
     public static Bitmap PrepareForOcr(Bitmap src) =>

@@ -24,8 +24,10 @@ public class WordCardData
 public static class WordInfoService
 {
     private static readonly ConcurrentDictionary<string, WordCardData> Cache = new();
-    private static readonly DeepLTranslator Translator = new();
+    private static readonly ITranslator Translator = TranslationService.Instance;
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
+
+    public static void ClearCache() => Cache.Clear();
 
     public static async Task<WordCardData> GetAsync(
         string surface,
@@ -36,7 +38,9 @@ public static class WordInfoService
     {
         surface = surface.ToLowerInvariant();
         var lemma = Lemmatizer.Lemmatize(surface);
-        if (Cache.TryGetValue(lemma, out var cached))
+        var provider = Settings.Load();
+        var cacheKey = provider.TranslationProvider + "|" + LocalTranslationFiles.ModelPath(provider) + "|" + lemma;
+        if (Cache.TryGetValue(cacheKey, out var cached))
         {
             var cachedResult = Copy(cached);
             cachedResult.Surface = surface;
@@ -49,7 +53,7 @@ public static class WordInfoService
                 {
                     cachedResult.ExampleRu = await Translator.TranslateAsync(
                         cachedResult.ExampleEn, "EN", "RU", cancellationToken);
-                    Cache[lemma] = Copy(cachedResult);
+                    Cache[cacheKey] = Copy(cachedResult);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -65,9 +69,9 @@ public static class WordInfoService
         if (!string.IsNullOrWhiteSpace(contextEn))
             ApplyContext(data, contextEn, contextRu ?? "", surface);
 
-        // Start both network calls together. The DeepL result can populate the card
-        // while the dictionary request is still running.
-        var dictionaryTask = FetchDictionaryAsync(lemma, cancellationToken);
+        var dictionaryTask = provider.TranslationProvider == "local"
+            ? Task.FromResult(new DictionaryData())
+            : FetchDictionaryAsync(lemma, cancellationToken);
         string quickTranslation;
         try
         {
@@ -90,8 +94,6 @@ public static class WordInfoService
         var dictionary = await dictionaryTask;
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Add parts of speech and a definition after the fast word translation.
-        // This request starts as soon as dictionary data is available.
         var batch = new List<string>();
         foreach (var pos in dictionary.PosList)
             batch.Add($"{lemma} ({PosRu(pos)})");
@@ -121,7 +123,6 @@ public static class WordInfoService
         }
         catch
         {
-            // Keep the fast result if optional details are unavailable.
         }
 
         if (string.IsNullOrWhiteSpace(contextEn) && dictionary.ExampleEn is not null)
@@ -141,14 +142,12 @@ public static class WordInfoService
 
         UpdateTranslationsLine(data);
         var cacheData = Copy(data);
-        // Cache word facts by lemma so another sentence reuses the same lookup.
-        // Keep the dictionary example as the context-independent fallback.
         if (!string.IsNullOrWhiteSpace(contextEn))
         {
             cacheData.ExampleEn = dictionary.ExampleEn ?? "";
             cacheData.ExampleRu = "";
         }
-        Cache[lemma] = cacheData;
+        Cache[cacheKey] = cacheData;
         return data;
     }
 
@@ -215,7 +214,6 @@ public static class WordInfoService
         data.Translations.Add((text, pos));
     }
 
-    // EN-предложение со словом + парное RU-предложение (по порядку)
     public static (string En, string Ru) ExtractContext(
         string original, string translated, string word)
     {

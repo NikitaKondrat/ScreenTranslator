@@ -59,7 +59,6 @@ public sealed class WordBadge : Window
         });
         grid.Children.Add(_addButton);
 
-        // непрозрачная, светлее фона оверлея, с рамкой и тенью — не сливается
         Content = new Border
         {
             Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#242424")),
@@ -85,7 +84,6 @@ public sealed class WordBadge : Window
             Hide();
         };
 
-        // Avoid network requests for words the pointer only crosses while moving.
         _loadTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(130) };
         _loadTimer.Tick += (_, _) =>
         {
@@ -167,7 +165,7 @@ public sealed class WordBadge : Window
         _cardHolder.Children.Clear();
         _cardHolder.Children.Add(WordCardBuilder.Build(
             data, compact: true, baseFontSize: Settings.Load().OverlayFontSize));
-        Position(); // размер изменился — позиционируем заново
+        Position();
     }
 
     private void CancelPendingLookup()
@@ -178,7 +176,6 @@ public sealed class WordBadge : Window
         cancellation?.Cancel();
     }
 
-    // по центру строго НАД словом; корректно на любом мониторе
     private void Position()
     {
         if (_anchor is null || !_anchor.IsVisible) return;
@@ -188,7 +185,6 @@ public sealed class WordBadge : Window
         double w = _anchor.RenderSize.Width;
         double h = _anchor.RenderSize.Height;
 
-        // границы всего виртуального экрана (все мониторы), а не основного
         double vsL = SystemParameters.VirtualScreenLeft;
         double vsT = SystemParameters.VirtualScreenTop;
         double vsW = SystemParameters.VirtualScreenWidth;

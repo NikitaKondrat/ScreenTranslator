@@ -6,18 +6,19 @@
 		<UseWPF>true</UseWPF>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<!-- если подключал иконку, верни эти две строки:
-		<ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    -->
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="System.Drawing.Common" Version="8.0.7" />
 		<PackageReference Include="PaddleOCRSharp" Version="6.2.0" />
-		<!-- если подключал иконку, верни: <Resource Include="Assets\app.ico" /> -->
+
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Remove="Tests\**\*.cs" />
+		<None Update="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<None Update="Assets\Licenses\*.txt" CopyToOutputDirectory="PreserveNewest"
+		      CopyToPublishDirectory="PreserveNewest" Link="licenses\%(Filename)%(Extension)" />
 		<EmbeddedResource Include="Assets\words.txt" LogicalName="ScreenTranslator.words.txt" />
 		<None Update="Assets\words.txt" CopyToOutputDirectory="PreserveNewest"
 		      CopyToPublishDirectory="PreserveNewest" Link="words.txt" />
@@ -25,7 +26,6 @@
 		      CopyToPublishDirectory="PreserveNewest" Link="tessdata\eng.traineddata" />
 	</ItemGroup>
 
-	<!-- нативки Paddle: автоматически раскладываются рядом с exe -->
 	<ItemGroup>
 		<None Include="$(NuGetPackageRoot)paddle.runtime.win_x64\3.3.0.1\build\win_x64\**\*"
 			  CopyToOutputDirectory="PreserveNewest"

@@ -12,7 +12,7 @@ namespace ScreenTranslator;
 public sealed class QuizWindow : Window
 {
     private const int MaxWords = 20;
-    private static readonly DeepLTranslator Translator = new();
+    private static readonly ITranslator Translator = TranslationService.Instance;
     private static readonly Random Rnd = new();
 
     private readonly List<DictEntry> _pool =
@@ -69,7 +69,6 @@ public sealed class QuizWindow : Window
     {
         _engToRus = engToRus;
         _questions = _pool.OrderBy(_ => Guid.NewGuid()).Take(MaxWords).ToList();
-        // в режиме RU->EN показываем случайное значение слова
         _prompts = _questions.Select(q =>
             engToRus ? q.Word : q.Meanings[Rnd.Next(q.Meanings.Count)]).ToList();
         _index = 0;
@@ -177,7 +176,6 @@ public sealed class QuizWindow : Window
         }
     }
 
-    // ---------- проверка ответа ----------
 
     private async Task<bool> CheckAnswerAsync(DictEntry entry, string answer)
     {
@@ -186,10 +184,8 @@ public sealed class QuizWindow : Window
 
         if (_engToRus)
         {
-            // 1) точное совпадение с любым значением — без сети
             if (entry.Meanings.Any(m => Normalize(m) == a)) return true;
 
-            // 2) переводим ответ игрока на английский и ищем заданное слово
             var back = await TranslateSafe(a, "RU", "EN");
             if (back is null) return false;
             var nb = Normalize(back);

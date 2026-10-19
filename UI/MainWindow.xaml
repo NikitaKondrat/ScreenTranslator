@@ -34,7 +34,8 @@
                 </StackPanel>
             </Grid>
 
-            <StackPanel Grid.Row="1" Margin="20,6,20,20">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="20,6,20,20">
                 <TextBlock Text="ГОРЯЧИЕ КЛАВИШИ" Foreground="{StaticResource MutedBrush}"
                            FontSize="11" Margin="0,8,0,10"/>
 
@@ -110,10 +111,18 @@
 
                 <TextBlock Text="ПЕРЕВОД" Foreground="{StaticResource MutedBrush}"
                            FontSize="11" Margin="0,4,0,6"/>
-                <TextBlock x:Name="DeepLStatusText" Foreground="{StaticResource MutedBrush}"
+                <ComboBox x:Name="TranslationProviderBox" Margin="0,0,0,8"
+                          SelectionChanged="OnTranslationProviderChanged">
+                    <ComboBoxItem Content="DeepL" Tag="deepl"/>
+                    <ComboBoxItem Content="Hy-MT2 — локально" Tag="local"/>
+                </ComboBox>
+                <TextBlock x:Name="TranslationStatusText" Foreground="{StaticResource MutedBrush}"
                            FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6"/>
-                <Button Content="Настроить ключ DeepL…" Style="{StaticResource DarkButton}"
+                <Button x:Name="DeepLKeyButton" Content="Настроить ключ DeepL…" Style="{StaticResource DarkButton}"
                         HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="OnDeepLKeyClick"/>
+                <Button x:Name="LocalTranslationButton" Content="Настроить локальный перевод…"
+                        Style="{StaticResource DarkButton}" Visibility="Collapsed"
+                        HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="OnLocalTranslationSetupClick"/>
 
                 <TextBlock Text="РАЗМЕР ТЕКСТА В ОВЕРЛЕЕ" Foreground="{StaticResource MutedBrush}"
                            FontSize="11" Margin="0,10,0,6"/>
@@ -157,6 +166,7 @@
                         Foreground="{StaticResource DangerBrush}"
                         HorizontalAlignment="Stretch" Click="OnExitClick"/>
             </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Border>
 </Window>

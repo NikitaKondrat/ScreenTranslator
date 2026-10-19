@@ -11,7 +11,6 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // Только одна копия программы на систему
         _mutex = new Mutex(true, "ScreenTranslator.SingleInstance", out bool createdNew);
         if (!createdNew)
         {
@@ -22,5 +21,12 @@ public partial class App : Application
 
         var main = new MainWindow();
         main.Initialize();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        TranslationService.Instance.Local.Dispose();
+        _mutex?.Dispose();
+        base.OnExit(e);
     }
 }
